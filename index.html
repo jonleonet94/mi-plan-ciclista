@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7fa">
+  <meta name="description" content="Planificador personal de entrenamiento ciclista">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <title>Mi Plan Ciclista</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">↗</div><div><strong>Mi Plan Ciclista</strong><small>Tu entrenamiento, bajo control</small></div></div>
+    <button class="icon-btn" id="backupQuick" aria-label="Copia de seguridad" title="Copia de seguridad">⇧</button>
+  </header>
+  <main>
+    <section id="view-home" class="view active">
+      <div class="eyebrow" id="todayLabel">TU PLAN</div>
+      <h1>Hola, ciclista</h1>
+      <p class="muted" id="homeDate"></p>
+      <article class="hero-card">
+        <div class="hero-top"><span class="pill" id="todayType">ENTRENAMIENTO</span><span class="muted light-muted" id="todayDuration"></span></div>
+        <h2 id="todayTitle">Cargando tu plan…</h2>
+        <p id="todayDescription" class="hero-desc"></p>
+        <div class="hero-metrics"><div><small>FTP indoor</small><strong id="homeIndoor">275 W</strong></div><div><small>FTP carretera</small><strong id="homeRoad">—</strong></div><div><small>Próximo objetivo</small><strong id="countdown">—</strong></div></div>
+        <button class="btn btn-white" id="todayDetails">Ver sesión</button>
+      </article>
+      <div class="section-head"><h2>Esta semana</h2><span id="weekProgress" class="muted small"></span></div>
+      <div class="progress-track"><div id="weekBar" class="progress-fill"></div></div>
+      <div id="weekSummary" class="mini-list"></div>
+      <div class="section-head"><h2>Próximos hitos</h2></div>
+      <div class="milestones">
+        <div><span class="mile-icon">⌁</span><div><strong>Marcha objetivo</strong><small>24 abril 2027 · 120 km · 2.000 m+</small></div></div>
+        <div><span class="mile-icon">♧</span><div><strong>Viaje a los Alpes</strong><small>26 agosto–5 septiembre 2027</small></div></div>
+      </div>
+      <article class="panel alpine-panel">
+        <div class="eyebrow">SEGUNDA PARTE DEL PLAN</div>
+        <h2>Preparación para los Alpes</h2>
+        <p><strong>26 de abril–5 de septiembre de 2027.</strong> Tras la marcha de abril, el plan pasa por recuperación, reconstrucción aeróbica, desarrollo de resistencia en subida, preparación específica, taper y viaje.</p>
+        <ul>
+          <li><strong>17 mayo–13 junio:</strong> recuperar volumen y resistencia, con tempo y sweet spot selectivos.</li>
+          <li><strong>14 junio–11 julio:</strong> trabajo controlado de umbral y VO₂ máx., manteniendo los fondos en Z2.</li>
+          <li><strong>12 julio–8 agosto:</strong> puertos largos, desnivel y ascensiones después de varias horas de bici.</li>
+          <li><strong>9–25 agosto:</strong> reducir volumen y llegar descansado al viaje.</li>
+        </ul>
+        <h3>Durante el viaje</h3>
+        <p>Alpe d’Huez, Galibier y Ventoux se abordarán a ritmo sostenible, sin convertir cada puerto en una competición. Como referencia para las ascensiones largas, prioriza el 70–82 % del FTP, ajustando por altitud, pendiente, calor, viento y sensaciones. Evita encadenar los tres grandes puertos como esfuerzos máximos en días consecutivos.</p>
+        <p class="hint">El calendario del viaje es orientativo: la distribución definitiva se adaptará cuando estén cerrados los recorridos y los días de cada puerto.</p>
+      </article>
+    </section>
+
+    <section id="view-calendar" class="view">
+      <div class="eyebrow">PLANIFICACIÓN</div><h1>Calendario</h1>
+      <div class="switch-row"><button class="seg active" data-cal="week">Semana</button><button class="seg" data-cal="list">Lista</button></div>
+      <div class="calendar-nav"><button class="icon-btn" id="prevWeek">‹</button><strong id="calendarTitle"></strong><button class="icon-btn" id="nextWeek">›</button></div>
+      <div id="calendarContent"></div>
+      <p class="hint">El calendario incluye ciclismo, gimnasio y descanso. Selecciona una sesión para ver sus detalles y registrarla.</p>
+    </section>
+
+    <section id="view-zones" class="view">
+      <div class="eyebrow">POTENCIA</div><h1>FTP y zonas</h1>
+      <p class="muted">Mantén separados los valores de tus dos bicicletas. Las sesiones futuras recalculan sus vatios al cambiar el FTP.</p>
+      <div class="ftp-grid">
+        <article class="panel"><label for="ftpIndoor">FTP indoor (W)</label><input id="ftpIndoor" type="number" min="80" max="600" step="1"><small id="indoorUpdated" class="muted"></small><button class="btn btn-primary" id="saveIndoor">Guardar FTP indoor</button></article>
+        <article class="panel"><label for="ftpRoad">FTP carretera (W)</label><input id="ftpRoad" type="number" min="80" max="600" step="1" placeholder="Sin registrar"><small id="roadUpdated" class="muted"></small><button class="btn btn-primary" id="saveRoad">Guardar FTP carretera</button></article>
+      </div>
+      <div class="section-head"><h2>Zonas de potencia</h2><span class="muted small">Selecciona bicicleta</span></div>
+      <div class="switch-row"><button class="seg active" data-zone="indoor">Indoor</button><button class="seg" data-zone="road">Carretera</button></div>
+      <div id="zoneTable" class="panel"></div>
+      <div class="panel note"><strong>Cómo se calculan</strong><p>Z1 ≤55%; Z2 56–75%; tempo 76–90%; umbral 91–105%; VO₂ máx. 106–120%; Z6 121–150%. Sweet spot se calcula aparte: 88–94%. Los rangos son orientativos y se redondean al vatio.</p></div>
+      <div class="section-head"><h2>Historial de tests</h2><button class="text-btn" id="addTest">＋ Añadir test</button></div>
+      <div id="testHistory" class="mini-list"></div>
+    </section>
+
+    <section id="view-progress" class="view">
+      <div class="eyebrow">SEGUIMIENTO</div><h1>Progreso</h1>
+      <div class="stat-grid">
+        <div class="stat-card"><small>Sesiones completadas</small><strong id="statDone">0</strong></div>
+        <div class="stat-card"><small>Horas registradas</small><strong id="statHours">0 h</strong></div>
+        <div class="stat-card"><small>Distancia</small><strong id="statKm">0 km</strong></div>
+        <div class="stat-card"><small>Desnivel</small><strong id="statClimb">0 m</strong></div>
+      </div>
+      <article class="panel"><div class="section-head"><h2>Horas por semana</h2></div><canvas id="hoursChart" height="210"></canvas></article>
+      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><canvas id="ftpChart" height="210"></canvas><p class="hint">Indoor y carretera se muestran por separado. Registra tests para alimentar este gráfico.</p></article>
+      <article class="panel"><div class="section-head"><h2>Distribución por estado</h2></div><div id="completionBreakdown"></div></article>
+    </section>
+
+    <section id="view-settings" class="view">
+      <div class="eyebrow">DATOS Y PREFERENCIAS</div><h1>Más</h1>
+      <article class="panel">
+        <h2>Perfil</h2>
+        <div class="form-grid"><label>Nombre visible<input id="athleteName" placeholder="Mi plan"></label><label>Peso (kg)<input id="athleteWeight" type="number" min="30" max="200"></label></div>
+        <button class="btn btn-primary" id="saveProfile">Guardar perfil</button>
+      </article>
+      <article class="panel">
+        <h2>Copia de seguridad</h2><p class="muted">Tus datos se guardan en este navegador. Exporta una copia regularmente para evitar pérdidas al cambiar de dispositivo o borrar los datos del navegador.</p>
+        <div class="button-row"><button class="btn btn-primary" id="exportData">Exportar copia</button><label class="btn btn-secondary file-label">Importar copia<input type="file" id="importData" accept="application/json"></label></div>
+        <button class="text-btn danger" id="resetData">Restablecer datos de la aplicación</button>
+      </article>
+      <article class="panel">
+        <h2>Acerca de esta versión</h2><p class="muted">Aplicación personal gratuita. Los datos se almacenan localmente. No hay cuenta, publicidad ni envío automático de información a terceros.</p><p class="hint">Para instalarla como PWA, publícala en un alojamiento HTTPS o ejecútala en localhost. La sincronización entre dispositivos no está activada en esta primera versión; se puede añadir posteriormente mediante un servicio con cuenta propia.</p>
+      </article>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="home"><span>⌂</span><small>Inicio</small></button>
+    <button class="nav-item" data-view="calendar"><span>▦</span><small>Plan</small></button>
+    <button class="nav-item" data-view="zones"><span>◉</span><small>FTP</small></button>
+    <button class="nav-item" data-view="progress"><span>⌁</span><small>Progreso</small></button>
+    <button class="nav-item" data-view="settings"><span>•••</span><small>Más</small></button>
+  </nav>
+
+  <dialog id="sessionDialog"><div class="dialog-head"><div><div class="eyebrow" id="dialogEyebrow">SESIÓN</div><h2 id="dialogTitle"></h2></div><button class="icon-btn" id="closeDialog">×</button></div><div id="dialogBody"></div></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
