@@ -83,8 +83,10 @@
         <div class="stat-card"><small>Desnivel</small><strong id="statClimb">0 m</strong></div>
       </div>
       <article class="panel"><div class="section-head"><h2>Horas por semana</h2></div><canvas id="hoursChart" height="210"></canvas></article>
-      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><canvas id="ftpChart" height="210"></canvas><p class="hint">Indoor y carretera se muestran por separado. Registra tests para alimentar este gráfico.</p></article>
+      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><h3>Indoor</h3><canvas id="ftpIndoorChart" height="190"></canvas><h3>Carretera</h3><canvas id="ftpRoadChart" height="190"></canvas><p class="hint">Las dos referencias se representan de forma independiente.</p></article>
+      <article class="panel"><div class="section-head"><h2>Carga semanal estimada</h2></div><p class="muted small">Minutos de entrenamiento × RPE. Es una referencia orientativa, no una medida clínica.</p><div id="loadSummary"></div></article>
       <article class="panel"><div class="section-head"><h2>Distribución por estado</h2></div><div id="completionBreakdown"></div></article>
+      <article class="panel"><div class="section-head"><h2>Historial de entrenamientos</h2><span class="muted small" id="historyCount"></span></div><div id="trainingHistory" class="mini-list"></div></article>
     </section>
 
     <section id="view-settings" class="view">

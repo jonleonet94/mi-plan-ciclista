@@ -4,7 +4,11 @@
 - Calendario completo de 41 semanas (23 nov 2026–5 sep 2027), con la marcha de abril y el bloque de preparación y viaje alpino.
 - Sesiones detalladas de martes, jueves y sábado; sesiones dominicales opcionales cuando corresponden; calendario diario específico durante el viaje.
 - Calendario de gimnasio y descanso durante los bloques de entrenamiento previos al viaje.
-- Fichas de sesiones y registro de duración, distancia, desnivel, potencia, FC, cadencia, RPE, hidratos y notas.
+- Fichas de sesiones y registro de duración, distancia, desnivel, potencia, FC, cadencia, RPE, hidratos, sueño, fatiga, sensación de piernas y notas.
+- Historial de entrenamientos con edición y borrado de registros.
+- Selección explícita de bicicleta en cada registro y cálculo de vatios según el FTP correspondiente.
+- Gráficos FTP indoor y carretera separados; el FTP indoor de 275 W aparece como estimación inicial, no como test histórico.
+- Estimación orientativa de carga semanal mediante minutos × RPE.
 - FTP indoor y carretera independientes; zonas y objetivos de vatios calculados dinámicamente.
 - Registro de tests FTP, panel de progreso, gráficos y copia de seguridad JSON/importación.
 - Sin entrenador IA, Strava, suscripciones ni servicios de pago. Los datos se guardan localmente en el navegador.
@@ -22,8 +26,13 @@ Puedes subir el contenido de esta carpeta a un repositorio GitHub y activar GitH
 ## Datos y copias de seguridad
 Los registros se guardan en el almacenamiento local del navegador y no se sincronizan automáticamente entre dispositivos. Exporta periódicamente una copia JSON desde Más > Copia de seguridad.
 
+## Novedades V3
+- Conserva la clave de almacenamiento local de V2 para reutilizar los datos existentes.
+- Al iniciar, elimina del historial la entrada ficticia que etiquetaba los 275 W iniciales como test; conserva el valor de FTP como estimación.
+- La carga semanal es una métrica orientativa basada en duración × RPE, no una prescripción automática.
+
 ## Consideraciones
-- El FTP indoor inicial se configura a 275 W. El FTP de carretera queda sin registrar hasta que se mida.
+- El FTP indoor inicial se configura a 275 W como estimación. El FTP de carretera queda sin registrar hasta que se mida.
 - Al cambiar FTP se recalculan las referencias de potencia de las sesiones; los registros históricos conservan los valores guardados.
 - Los tests de 20 min son estimaciones (95% de la media), no una medición directa de FTP.
 - Las zonas son orientativas. Z7 no tiene rango fijo.

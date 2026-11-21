@@ -1,6 +1,6 @@
 {
   "name": "Mi Plan Ciclista",
-  "short_name": "Plan Ciclista",
+  "short_name": "Mi Plan",
   "description": "Planificador personal de entrenamiento ciclista",
   "start_url": "./",
   "scope": "./",

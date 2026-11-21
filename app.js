@@ -5,8 +5,8 @@ const $ = id => document.getElementById(id);
 const STORAGE_KEY = "cycling-plan-pwa-v1";
 const defaultState = {
   profile:{name:"Ciclista",weight:76},
-  ftp:{indoor:275,road:null,indoorDate:"2026-11-24",roadDate:null},
-  ftpHistory:[{date:"2026-11-24",bike:"indoor",ftp:275,mean20:289.5,note:"Estimación inicial indicada"}],
+  ftp:{indoor:275,road:null,indoorDate:null,roadDate:null},
+  ftpHistory:[],
   logs:{},
   customSessions:{},
   selectedZone:"indoor",
@@ -17,8 +17,14 @@ let state = loadState();
 let currentSession = null;
 
 function loadState(){
-  try { const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)); return saved ? {...structuredClone(defaultState),...saved,profile:{...defaultState.profile,...saved.profile},ftp:{...defaultState.ftp,...saved.ftp}} : structuredClone(defaultState); }
-  catch(e){ return structuredClone(defaultState); }
+  try {
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!saved)return structuredClone(defaultState);
+    const migrated={...structuredClone(defaultState),...saved,profile:{...defaultState.profile,...saved.profile},ftp:{...defaultState.ftp,...saved.ftp}};
+    migrated.ftpHistory=Array.isArray(saved.ftpHistory)?saved.ftpHistory.filter(t=>!(t.note==="Estimación inicial indicada" && t.date==="2026-11-24" && Number(t.ftp)===275)):[];
+    if(migrated.ftp.indoorDate==="2026-11-24" && migrated.ftpHistory.length===0)migrated.ftp.indoorDate=null;
+    return migrated;
+  } catch(e){ return structuredClone(defaultState); }
 }
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}
 function parseDate(s){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d,12);}
@@ -33,7 +39,7 @@ function pctRange(text){
   const m=text.match(/(\d{2,3})[–-](\d{2,3})%/);
   return m?{lo:+m[1]/100,hi:+m[2]/100}:null;
 }
-function getBikeForSession(text){return /carretera/i.test(text)||/over-unders/i.test(text)||/umbral/i.test(text)?(state.ftp.road?"road":"indoor"):"indoor";}
+function getBikeForSession(text){return /carretera/i.test(text)?(state.ftp.road?"road":"indoor"):"indoor";}
 function calcTarget(text){
   const range=pctRange(text); if(!range)return "";
   const bike=getBikeForSession(text), ftp=state.ftp[bike]||state.ftp.indoor;
@@ -124,20 +130,26 @@ function openSession(e){
   $("dialogEyebrow").textContent=`${e.kind||sessionType(e.description)} · ${fmt(parseDate(e.date),{weekday:"long",day:"numeric",month:"long",year:"numeric"})}`;
   $("dialogTitle").textContent=e.title;
   const log=state.logs[e.date]||{};
-  const target=calcTarget(e.description);
-  $("dialogBody").innerHTML=`<div class="detail-block"><strong>Sesión prevista</strong>${esc(e.description)}${target?`<br><b>Objetivo de potencia orientativo: ${target}</b>`:""}<br><span class="muted">Cadencia: según bloque y terreno; normalmente 85–95 rpm en intervalos y Z2.</span></div>
+  const inferredBike=getBikeForSession(e.description);
+  $("dialogBody").innerHTML=`<div class="detail-block"><strong>Sesión prevista</strong>${esc(e.description)}<br><b id="targetPower"></b><br><span class="muted">Cadencia: según bloque y terreno; normalmente 85–95 rpm en intervalos y Z2.</span></div>
   <form id="logForm" class="dialog-form">
+    <label>Bicicleta utilizada<select name="bike"><option value="indoor">Indoor / rodillo</option><option value="road">Carretera</option></select></label>
     <div class="form-row"><label>Estado<select name="status"><option value="done" ${log.status==="done"?"selected":""}>Completada</option><option value="partial" ${log.status==="partial"?"selected":""}>Parcial</option><option value="missed" ${log.status==="missed"?"selected":""}>No realizada</option></select></label><label>Duración real (min)<input name="minutes" type="number" min="0" value="${log.minutes??""}" placeholder="Ej. 65"></label></div>
     <div class="form-row"><label>Distancia (km)<input name="km" type="number" min="0" step=".1" value="${log.km??""}"></label><label>Desnivel (m)<input name="climb" type="number" min="0" value="${log.climb??""}"></label></div>
     <div class="form-row"><label>Potencia media (W)<input name="power" type="number" min="0" value="${log.power??""}"></label><label>Potencia normalizada (W)<input name="np" type="number" min="0" value="${log.np??""}"></label></div>
     <div class="form-row"><label>FC media (bpm)<input name="hr" type="number" min="0" value="${log.hr??""}"></label><label>Cadencia media (rpm)<input name="cadence" type="number" min="0" value="${log.cadence??""}"></label></div>
     <div class="form-row"><label>RPE (1–10)<input name="rpe" type="number" min="1" max="10" value="${log.rpe??""}"></label><label>Hidratos (g/h)<input name="carbs" type="number" min="0" value="${log.carbs??""}"></label></div>
+    <div class="form-row"><label>Sueño (1–5)<input name="sleep" type="number" min="1" max="5" value="${log.sleep??""}" placeholder="Opcional"></label><label>Fatiga (1–5)<input name="fatigue" type="number" min="1" max="5" value="${log.fatigue??""}" placeholder="Opcional"></label></div>
+    <label>Sensación de piernas (1–5)<input name="legs" type="number" min="1" max="5" value="${log.legs??""}" placeholder="1 muy pesadas · 5 muy frescas"></label>
     <label>Sensaciones / notas<textarea name="notes" placeholder="Fatiga, sensaciones, nutrición, incidencias…">${esc(log.notes||"")}</textarea></label>
     <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelLog">Cerrar</button><button class="btn btn-primary" type="submit">Guardar registro</button></div>
   </form>`;
   $("sessionDialog").showModal();
+  const bikeSelect=$("logForm").elements.bike;bikeSelect.value=log.bike||inferredBike;
+  const updateTarget=()=>{const range=pctRange(e.description),bike=bikeSelect.value,ftp=state.ftp[bike];$("targetPower").textContent=range&&ftp?`Objetivo orientativo (${bike==="road"?"carretera":"indoor"}): ${Math.round(ftp*range.lo)}–${Math.round(ftp*range.hi)} W`:range?"Registra un FTP para esta bicicleta para calcular los vatios.":"";};
+  bikeSelect.addEventListener("change",updateTarget);updateTarget();
   $("cancelLog").onclick=()=>$("sessionDialog").close();
-  $("logForm").onsubmit=ev=>{ev.preventDefault();const fd=new FormData(ev.target),obj={};for(const [k,v] of fd.entries())obj[k]=v===""?"":(["minutes","km","climb","power","np","hr","cadence","rpe","carbs"].includes(k)?Number(v):v);obj.date=e.date;obj.planned=e.description;obj.ftpUsed=state.ftp[getBikeForSession(e.description)]||state.ftp.indoor;obj.bike=getBikeForSession(e.description);state.logs[e.date]=obj;saveState();$("sessionDialog").close();renderHome();renderCalendar();renderProgress();toast("Entrenamiento guardado");};
+  $("logForm").onsubmit=ev=>{ev.preventDefault();const fd=new FormData(ev.target),obj={};for(const [k,v] of fd.entries())obj[k]=v===""?"":(["minutes","km","climb","power","np","hr","cadence","rpe","carbs","sleep","fatigue","legs"].includes(k)?Number(v):v);obj.date=e.date;obj.planned=e.description;obj.bike=obj.bike||inferredBike;obj.ftpUsed=state.ftp[obj.bike]||null;state.logs[e.date]=obj;saveState();$("sessionDialog").close();renderHome();renderCalendar();renderProgress();toast("Entrenamiento guardado");};
 }
 $("closeDialog").onclick=()=>$("sessionDialog").close();
 function renderZones(){
@@ -148,7 +160,7 @@ function renderZones(){
   const ftp=state.ftp[state.selectedZone];
   const rows=[["Z1 · Recuperación",0,.55,"≤"],["Z2 · Resistencia",.56,.75,""],["Z3 · Tempo",.76,.90,""],["Sweet spot",.88,.94,""],["Z4 · Umbral",.91,1.05,""],["Z5 · VO₂ máx.",1.06,1.20,""],["Z6 · Anaeróbica",1.21,1.50,""]];
   $("zoneTable").innerHTML=ftp?rows.map(([name,a,b,prefix])=>`<div class="zone-row"><span class="zone-name"><i class="dot"></i>${name}</span><span class="zone-value">${prefix?prefix+Math.round(ftp*b):`${Math.round(ftp*a)}–${Math.round(ftp*b)}`} W</span></div>`).join(""):`<p class="muted">Registra un FTP de carretera para consultar estas zonas.</p>`;
-  $("testHistory").innerHTML=state.ftpHistory.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`<div class="mini-item"><div class="left"><strong>${t.bike==="indoor"?"Indoor":"Carretera"} · ${t.ftp} W</strong><small>${t.date} · Media 20 min: ${t.mean20||"—"} W ${t.note? "· "+esc(t.note):""}</small></div><span class="status done">Test</span></div>`).join("")||'<p class="muted small">Todavía no hay tests registrados.</p>';
+  $("testHistory").innerHTML=state.ftpHistory.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`<div class="mini-item"><div class="left"><strong>${t.bike==="indoor"?"Indoor":"Carretera"} · ${t.ftp} W</strong><small>${t.date} · Media 20 min: ${t.mean20||"—"} W ${t.note? "· "+esc(t.note):""}</small></div><span class="status ${t.mean20?"done":"partial"}">${t.mean20?"Test":"Manual"}</span></div>`).join("")||'<p class="muted small">Todavía no hay tests registrados.</p>';
 }
 document.querySelectorAll("[data-zone]").forEach(b=>b.addEventListener("click",()=>{state.selectedZone=b.dataset.zone;saveState();renderZones();}));
 function saveFTP(bike){
@@ -185,9 +197,19 @@ function renderProgress(){
   const weeks=PLAN.slice(0,Math.max(1,weekIndexFor(new Date())+1)).slice(-8);
   const vals=weeks.map(w=>Object.values(state.logs).filter(l=>l.date>=w.start&&l.date<=iso(addDays(parseDate(w.start),6))).reduce((a,l)=>a+(Number(l.minutes)||0)/60,0));
   drawChart($("hoursChart"),weeks.map(w=>`S${w.week}`),vals,"Horas registradas");
-  const hist=state.ftpHistory.slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-8);
-  const road=hist.filter(x=>x.bike==="road"),indoor=hist.filter(x=>x.bike==="indoor");
-  drawChart($("ftpChart"),hist.map(x=>x.date.slice(5)),hist.map(x=>x.ftp),"FTP (W)");
+  const hist=state.ftpHistory.slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
+  const indoor=hist.filter(x=>x.bike==="indoor"),road=hist.filter(x=>x.bike==="road");
+  drawChart($("ftpIndoorChart"),indoor.map(x=>x.date.slice(5)),indoor.map(x=>x.ftp),"FTP indoor (W)");
+  drawChart($("ftpRoadChart"),road.map(x=>x.date.slice(5)),road.map(x=>x.ftp),"FTP carretera (W)");
+  const weekStart=mondayOf(new Date()),weekEnd=iso(addDays(weekStart,6));
+  const weekLogs=valid.filter(l=>l.date>=iso(weekStart)&&l.date<=weekEnd);
+  const load=weekLogs.reduce((a,l)=>a+(Number(l.minutes)||0)*(Number(l.rpe)||0),0);
+  $("loadSummary").innerHTML=`<div class="zone-row"><span>Carga registrada esta semana</span><strong>${Math.round(load)} UA</strong></div><p class="hint">${weekLogs.filter(l=>Number(l.rpe)>0).length} sesiones con RPE registrado. Completa el RPE para mejorar esta estimación.</p>`;
+  const history=Object.values(state.logs).filter(l=>l.date).sort((a,b)=>b.date.localeCompare(a.date));
+  $("historyCount").textContent=history.length+" registros";
+  $("trainingHistory").innerHTML=history.length?history.map(l=>`<div class="mini-item"><div class="left"><strong>${fmt(parseDate(l.date),{day:"numeric",month:"short",year:"numeric"})} · ${l.bike==="road"?"Carretera":"Indoor"}</strong><small>${esc(l.planned||"Actividad")} · ${l.minutes||"—"} min · ${l.km||"—"} km · ${l.climb||0} m+ · RPE ${l.rpe||"—"}</small></div><div class="history-actions"><button class="text-btn" data-edit="${l.date}">Editar</button><button class="text-btn danger" data-delete="${l.date}">Borrar</button></div></div>`).join(""):'<p class="muted small">Todavía no hay entrenamientos registrados.</p>';
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const date=b.dataset.edit,day=(parseDate(date).getDay()+6)%7,idx=weekIndexFor(parseDate(date));const w=PLAN[idx]||PLAN[0];const ev=getDailyEvents(parseDate(date)).find(x=>x.kind==="ride"||x.kind==="event")||{date,title:"Actividad registrada",description:state.logs[date].planned||"Actividad",kind:"ride"};openSession({...ev,date});});
+  document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{const date=b.dataset.delete;if(confirm("¿Borrar el registro de este entrenamiento?")){delete state.logs[date];saveState();renderProgress();renderHome();renderCalendar();toast("Registro eliminado");}});
   const planned=Object.keys(state.logs).length,done=valid.length,partial=logs.filter(l=>l.status==="partial").length,missed=logs.filter(l=>l.status==="missed").length;
   $("completionBreakdown").innerHTML=`<div class="zone-row"><span>Completadas</span><strong>${done}</strong></div><div class="barline"><span style="width:${planned?done/planned*100:0}%"></span></div><div class="zone-row"><span>Parciales</span><strong>${partial}</strong></div><div class="zone-row"><span>No realizadas</span><strong>${missed}</strong></div><p class="hint">El cumplimiento se calcula sobre las sesiones que has registrado, no sobre todas las sesiones previstas.</p>`;
 }
