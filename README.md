@@ -4,7 +4,7 @@
 - Calendario completo de 41 semanas (23 nov 2026–5 sep 2027), con la marcha de abril y el bloque de preparación y viaje alpino.
 - Sesiones detalladas de martes, jueves y sábado; sesiones dominicales opcionales cuando corresponden; calendario diario específico durante el viaje.
 - Calendario de gimnasio y descanso durante los bloques de entrenamiento previos al viaje.
-- Fichas de sesiones y registro de duración, distancia, desnivel, potencia, FC, cadencia, RPE, hidratos, sueño, fatiga, sensación de piernas y notas.
+- Fichas de sesiones y registro ciclista de duración, distancia, desnivel, potencia media/normalizada, FC media/máxima, cadencia, RPE, sensación de piernas y notas.
 - Historial de entrenamientos con edición y borrado de registros.
 - Selección explícita de bicicleta en cada registro y cálculo de vatios según el FTP correspondiente.
 - Gráficos FTP indoor y carretera separados; el FTP indoor de 275 W aparece como estimación inicial, no como test histórico.
@@ -46,3 +46,21 @@ Los registros se guardan en el almacenamiento local del navegador y no se sincro
 - Registro: añade FC máxima y elimina campos de hidratos, sueño y fatiga.
 - Tests FTP: peso, FC media, FC máxima y W/kg calculado.
 - Progreso: historial, carga semanal, evolución FTP, perfil de potencia y métricas acumuladas.
+
+
+## Versión 3.2
+- Enfoque exclusivo en el registro y análisis de ciclismo; no se añade registro de gimnasio. La vista de lista del Plan muestra sesiones ciclistas y el calendario semanal de Inicio prioriza ciclismo.
+- Carga interna estimada de las últimas 8 semanas mediante minutos × RPE; el TSS de carretera se muestra separado y no se mezcla con las unidades de carga.
+- IF y TSS automáticos para sesiones de carretera cuando están disponibles NP, duración y FTP de carretera. Se guarda el FTP usado como referencia histórica.
+- Zonas: W/kg junto al FTP indoor y de carretera; zonas de FC por FC máxima, identificadas como estimaciones generales.
+- Perfil de potencia fechado y separado por bicicleta: 5 s, 20 s, 1 min, 5 min, 20 min y 60 min, con W/kg y curva visual. Los valores antiguos sin fecha/bicicleta se conservan sin reasignarlos.
+- Registro visual de potencia media por intervalo en sesiones estructuradas compatibles.
+- Historial de peso con W/kg calculado usando las referencias FTP guardadas en cada fecha.
+- Calculadora independiente para planificar hidratos, líquidos y sodio en salidas largas; estos datos no se añaden al formulario general de entrenamiento.
+- Conserva la clave local `cycling-plan-pwa-v1` para mantener los registros de versiones anteriores; exporta una copia JSON antes de actualizar.
+
+## Cálculos y límites
+- IF = NP / FTP. TSS = duración en horas × IF² × 100. Se calcula solo para carretera y requiere NP, duración y FTP. El FTP empleado se guarda en el registro.
+- Carga semanal = minutos × RPE. Se presenta separada del TSS porque son métricas distintas.
+- Las zonas de FC basadas en FC máxima son orientativas y no sustituyen una evaluación individual de umbrales.
+- El análisis de intervalos reconoce las estructuras comunes del plan (series repetidas con rango porcentual y bloques over-under). Otras descripciones pueden no generar campos automáticos de intervalo.

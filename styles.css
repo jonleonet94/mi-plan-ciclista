@@ -5,3 +5,31 @@
 
 /* V3.1 */
 .home-week-calendar{display:grid;gap:7px;margin-top:10px}.home-day{background:#fff;border:1px solid var(--line);border-radius:13px;padding:10px}.home-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.home-day-head strong{font-size:12px;text-transform:capitalize}.home-day-head small{font-size:10px;color:var(--muted)}.home-event{display:flex;align-items:center;gap:7px;padding:7px 8px;margin-top:5px;border-radius:8px;background:#f4f8f6;font-size:11px;color:var(--text)}.home-event span{flex:1}.home-event.gym{background:#f3f5f8}.home-event.rest{background:#fafafa;color:var(--muted)}.home-event button{border:0;background:transparent;color:var(--primary);font-size:17px;padding:0 3px}.home-event b{color:var(--primary)}.zone-wkg{font-size:10px;color:var(--muted);font-weight:500}.hrmax-panel{margin-top:16px}.hrmax-panel input{width:100%;border:1px solid var(--line);background:#fbfcfd;padding:11px;border-radius:10px;margin:8px 0 5px;color:var(--text)}#powerProfileDisplay .zone-row strong{font-variant-numeric:tabular-nums}.stat-grid{margin:10px 0 0}@media(min-width:560px){.home-week-calendar{grid-template-columns:1fr 1fr}}
+
+/* V3.2: new cycling performance modules */
+.ftp-wkg{display:block;margin:4px 0 2px;font-weight:700;color:var(--primary)}
+.road-load-metrics{background:#f1f6f4;border:1px solid #dcebe4;border-radius:12px;padding:11px;margin:10px 0}
+.road-metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.road-metric-grid small{display:block;color:var(--muted);font-size:10px}
+.road-metric-grid strong{display:block;font:800 22px Manrope;color:var(--primary);margin-top:3px}
+.interval-log-box{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:#fbfcfd}
+.interval-log-box>strong{font-size:13px}
+.interval-input-row{display:flex!important;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:8px 0;margin:6px 0!important}
+.interval-input-row span{font-size:11px;flex:1}
+.interval-input-row small{display:block;color:var(--muted);font-size:10px;margin-top:3px;font-weight:400}
+.interval-input-row input{width:105px!important;max-width:36%;margin:0!important}
+.interval-session{border-top:1px solid var(--line);padding:11px 0}
+.interval-session:first-child{border-top:0}
+.interval-session>strong,.interval-session>small{display:block}
+.interval-session>strong{font-size:12px}
+.interval-session>small{font-size:10px;margin:3px 0 8px}
+.interval-result{margin:9px 0}
+.interval-result-head{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:5px}
+.interval-result-head strong{font-variant-numeric:tabular-nums}
+.interval-track{height:11px;border-radius:20px;background:#eef1f3;position:relative;overflow:hidden}
+.interval-target{position:absolute;top:0;bottom:0;background:#b8ddcc;border-radius:20px}
+.interval-marker{position:absolute;top:-2px;height:15px;width:3px;background:#1c5949;border-radius:3px;transform:translateX(-50%)}
+.interval-result>small{display:block;font-size:10px;margin-top:4px}
+.nutrition-result{background:#f4f8f6;border-radius:12px;padding:10px 12px;margin-top:12px}
+.nutrition-result .zone-row{font-size:12px}
+@media(max-width:420px){.interval-input-row input{width:88px!important}.road-metric-grid strong{font-size:19px}}

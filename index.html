@@ -44,22 +44,22 @@
       <div class="switch-row"><button class="seg active" data-cal="week">Semana</button><button class="seg" data-cal="list">Lista</button></div>
       <div class="calendar-nav"><button class="icon-btn" id="prevWeek">‹</button><strong id="calendarTitle"></strong><button class="icon-btn" id="nextWeek">›</button></div>
       <div id="calendarContent"></div>
-      <p class="hint">El calendario incluye ciclismo, gimnasio y descanso. Selecciona una sesión para ver sus detalles y registrarla.</p>
+      <p class="hint">La vista semanal muestra el calendario completo. La vista de lista prioriza las sesiones de ciclismo.</p>
     </section>
 
     <section id="view-zones" class="view">
       <div class="eyebrow">REFERENCIAS DE ENTRENAMIENTO</div><h1>Zonas</h1>
       <p class="muted">Mantén separados los valores de tus dos bicicletas. Las sesiones futuras recalculan sus vatios al cambiar el FTP.</p>
       <div class="ftp-grid">
-        <article class="panel"><label for="ftpIndoor">FTP indoor (W)</label><input id="ftpIndoor" type="number" min="80" max="600" step="1"><small id="indoorUpdated" class="muted"></small><button class="btn btn-primary" id="saveIndoor">Guardar FTP indoor</button></article>
-        <article class="panel"><label for="ftpRoad">FTP carretera (W)</label><input id="ftpRoad" type="number" min="80" max="600" step="1" placeholder="Sin registrar"><small id="roadUpdated" class="muted"></small><button class="btn btn-primary" id="saveRoad">Guardar FTP carretera</button></article>
+        <article class="panel"><label for="ftpIndoor">FTP indoor (W)</label><input id="ftpIndoor" type="number" min="80" max="600" step="1"><small id="indoorUpdated" class="muted"></small><small id="indoorWkg" class="muted ftp-wkg"></small><button class="btn btn-primary" id="saveIndoor">Guardar FTP indoor</button></article>
+        <article class="panel"><label for="ftpRoad">FTP carretera (W)</label><input id="ftpRoad" type="number" min="80" max="600" step="1" placeholder="Sin registrar"><small id="roadUpdated" class="muted"></small><small id="roadWkg" class="muted ftp-wkg"></small><button class="btn btn-primary" id="saveRoad">Guardar FTP carretera</button></article>
       </div>
       <div class="section-head"><h2>Zonas de potencia</h2><span class="muted small">Selecciona bicicleta</span></div>
       <div class="switch-row"><button class="seg active" data-zone="indoor">Indoor</button><button class="seg" data-zone="road">Carretera</button></div>
       <div id="zoneTable" class="panel"></div><p class="hint">Los valores W/kg se calculan con tu peso de perfil y el FTP de cada bicicleta.</p>
       <div class="panel note"><strong>Cómo se calculan</strong><p>Z1 ≤55%; Z2 56–75%; tempo 76–90%; umbral 91–105%; VO₂ máx. 106–120%; Z6 121–150%. Sweet spot se calcula aparte: 88–94%. Los rangos son orientativos y se redondean al vatio.</p></div>
-      <article class="panel hrmax-panel"><h2>Frecuencia cardíaca máxima</h2><p class="muted small">Introduce tu FC máxima medida o conocida. Las zonas se calculan como porcentaje de ese valor.</p><label for="hrMaxInput">FC máxima (bpm)</label><input id="hrMaxInput" type="number" min="100" max="230" placeholder="Ej. 190"><button class="btn btn-primary" id="saveHrMax">Guardar FC máxima</button></article>
-      <div class="section-head"><h2>Zonas de frecuencia cardíaca</h2><span class="muted small">% de FC máxima</span></div><div id="hrZoneTable" class="panel"></div>
+      <article class="panel hrmax-panel"><h2>Frecuencia cardíaca máxima</h2><p class="muted small">Introduce tu FC máxima medida o conocida. Las zonas calculadas por porcentaje de FC máxima son estimaciones generales.</p><label for="hrMaxInput">FC máxima (bpm)</label><input id="hrMaxInput" type="number" min="100" max="230" placeholder="Ej. 190"><button class="btn btn-primary" id="saveHrMax">Guardar FC máxima</button></article>
+      <div class="section-head"><h2>Zonas de frecuencia cardíaca</h2><span class="muted small">Estimadas por % de FC máxima</span></div><div id="hrZoneTable" class="panel"></div>
       <div class="section-head"><h2>Historial de tests</h2><button class="text-btn" id="addTest">＋ Añadir test</button></div>
       <div id="testHistory" class="mini-list"></div>
     </section>
@@ -67,9 +67,11 @@
     <section id="view-progress" class="view">
       <div class="eyebrow">SEGUIMIENTO</div><h1>Progreso</h1>
       <article class="panel"><div class="section-head"><h2>Historial de entrenamientos</h2><span class="muted small" id="historyCount"></span></div><div id="trainingHistory" class="mini-list"></div></article>
-      <article class="panel"><div class="section-head"><h2>Carga semanal estimada</h2></div><p class="muted small">Minutos de entrenamiento × RPE. Es una referencia orientativa, no una medida clínica.</p><div id="loadSummary"></div><canvas id="hoursChart" height="190"></canvas></article>
-      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><h3>Indoor</h3><canvas id="ftpIndoorChart" height="170"></canvas><h3>Carretera</h3><canvas id="ftpRoadChart" height="170"></canvas></article>
-      <article class="panel"><div class="section-head"><h2>Perfil de potencia</h2><button class="text-btn" id="editPowerProfile">Editar</button></div><p class="muted small">Mejores potencias representativas por duración. Introduce tus mejores valores conocidos.</p><div id="powerProfileDisplay"></div></article>
+      <article class="panel"><div class="section-head"><h2>Carga semanal estimada</h2></div><p class="muted small">Minutos de entrenamiento × RPE. Es una referencia orientativa, no una medida clínica.</p><div id="loadSummary"></div><canvas id="loadChart" height="190"></canvas></article>
+      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><h3>Indoor · W</h3><canvas id="ftpIndoorChart" height="170"></canvas><h3>Indoor · W/kg</h3><canvas id="ftpIndoorWkgChart" height="150"></canvas><h3>Carretera · W</h3><canvas id="ftpRoadChart" height="170"></canvas><h3>Carretera · W/kg</h3><canvas id="ftpRoadWkgChart" height="150"></canvas></article>
+      <article class="panel"><div class="section-head"><h2>Perfil de potencia</h2><button class="text-btn" id="editPowerProfile">＋ Añadir registro</button></div><p class="muted small">Registra esfuerzos máximos fechados por bicicleta. Se muestran los mejores valores de cada duración y su W/kg.</p><div class="switch-row"><button class="seg active" data-powerbike="indoor">Indoor</button><button class="seg" data-powerbike="road">Carretera</button></div><div id="powerProfileDisplay"></div><canvas id="powerCurveChart" height="190"></canvas><div id="powerProfileHistory" class="mini-list"></div></article>
+      <article class="panel"><div class="section-head"><h2>Evolución del peso y W/kg</h2><button class="text-btn" id="addWeight">＋ Registrar peso</button></div><div id="weightSummary"></div><canvas id="weightChart" height="180"></canvas><h3 class="sub-chart-title">Evolución de W/kg</h3><canvas id="weightIndoorWkgChart" height="170"></canvas><canvas id="weightRoadWkgChart" height="170"></canvas><div id="weightHistoryList" class="mini-list"></div></article>
+      <article class="panel"><div class="section-head"><h2>Análisis de intervalos</h2></div><p class="muted small">Compara los vatios medios de los intervalos registrados con el rango objetivo de cada bloque.</p><div id="intervalAnalysis"></div></article>
       <article class="panel"><div class="section-head"><h2>Progreso acumulado</h2></div><div class="stat-grid"><div class="stat-card"><small>Sesiones realizadas</small><strong id="statDone">0</strong></div><div class="stat-card"><small>Distancia</small><strong id="statKm">0 km</strong></div><div class="stat-card"><small>Horas</small><strong id="statHours">0 h</strong></div><div class="stat-card"><small>Desnivel</small><strong id="statClimb">0 m</strong></div></div><div class="section-head"><h2>Cumplimiento</h2></div><div id="completionBreakdown"></div></article>
     </section>
 
@@ -81,12 +83,18 @@
         <button class="btn btn-primary" id="saveProfile">Guardar perfil</button>
       </article>
       <article class="panel">
+        <h2>Nutrición para salidas largas</h2>
+        <p class="muted small">Planifica la ingesta antes de salir. Son valores editables de referencia, no una pauta individual. Este cálculo es independiente del registro de entrenamientos.</p>
+        <div class="form-grid"><label>Duración prevista (h)<input id="nutritionHours" type="number" min="0" step="0.25" value="3"></label><label>Hidratos (g/h)<input id="nutritionCarbs" type="number" min="0" step="5" value="60"></label><label>Líquidos (ml/h)<input id="nutritionFluids" type="number" min="0" step="50" value="500"></label><label>Sodio (mg/h, opcional)<input id="nutritionSodium" type="number" min="0" step="100" value="0"></label></div>
+        <div id="nutritionTotals" class="nutrition-result"></div>
+      </article>
+      <article class="panel">
         <h2>Copia de seguridad</h2><p class="muted">Tus datos se guardan en este navegador. Exporta una copia regularmente para evitar pérdidas al cambiar de dispositivo o borrar los datos del navegador.</p>
         <div class="button-row"><button class="btn btn-primary" id="exportData">Exportar copia</button><label class="btn btn-secondary file-label">Importar copia<input type="file" id="importData" accept="application/json"></label></div>
         <button class="text-btn danger" id="resetData">Restablecer datos de la aplicación</button>
       </article>
       <article class="panel">
-        <h2>Acerca de esta versión</h2><p class="muted">Aplicación personal gratuita. Los datos se almacenan localmente. No hay cuenta, publicidad ni envío automático de información a terceros.</p><p class="hint">Para instalarla como PWA, publícala en un alojamiento HTTPS o ejecútala en localhost. La sincronización entre dispositivos no está activada en esta primera versión; se puede añadir posteriormente mediante un servicio con cuenta propia.</p>
+        <h2>Acerca de esta versión · V3.2</h2><p class="muted">Aplicación personal gratuita. Los datos se almacenan localmente. No hay cuenta, publicidad ni envío automático de información a terceros.</p><p class="hint">Para instalarla como PWA, publícala en un alojamiento HTTPS o ejecútala en localhost. La sincronización entre dispositivos no está activada en esta primera versión; se puede añadir posteriormente mediante un servicio con cuenta propia.</p>
       </article>
     </section>
   </main>
