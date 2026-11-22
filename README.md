@@ -37,3 +37,12 @@ Los registros se guardan en el almacenamiento local del navegador y no se sincro
 - Los tests de 20 min son estimaciones (95% de la media), no una medición directa de FTP.
 - Las zonas son orientativas. Z7 no tiene rango fijo.
 - La planificación del viaje alpino es orientativa y debe ajustarse a rutas, meteorología, altitud y recuperación reales.
+
+
+## Versión 3.1
+- Inicio: entrenamiento del día, progreso semanal, cuenta atrás a los objetivos y calendario de la semana.
+- Plan: se conserva el calendario semanal y la vista de bloques/sesiones.
+- Zonas: zonas de potencia con W/kg y zonas de frecuencia cardíaca por % de FC máxima.
+- Registro: añade FC máxima y elimina campos de hidratos, sueño y fatiga.
+- Tests FTP: peso, FC media, FC máxima y W/kg calculado.
+- Progreso: historial, carga semanal, evolución FTP, perfil de potencia y métricas acumuladas.

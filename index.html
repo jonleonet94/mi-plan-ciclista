@@ -31,24 +31,12 @@
       <div class="progress-track"><div id="weekBar" class="progress-fill"></div></div>
       <div id="weekSummary" class="mini-list"></div>
       <div class="section-head"><h2>Próximos hitos</h2></div>
-      <div class="milestones">
-        <div><span class="mile-icon">⌁</span><div><strong>Marcha objetivo</strong><small>24 abril 2027 · 120 km · 2.000 m+</small></div></div>
-        <div><span class="mile-icon">♧</span><div><strong>Viaje a los Alpes</strong><small>26 agosto–5 septiembre 2027</small></div></div>
+      <div class="milestones" id="homeMilestones">
+        <div><span class="mile-icon">⌁</span><div><strong>Marcha objetivo</strong><small>24 abril 2027 · 120 km · 2.000 m+ · <b id="marchCountdown">—</b></small></div></div>
+        <div><span class="mile-icon">♧</span><div><strong>Viaje a los Alpes</strong><small>26 agosto 2027 · <b id="alpsCountdown">—</b></small></div></div>
       </div>
-      <article class="panel alpine-panel">
-        <div class="eyebrow">SEGUNDA PARTE DEL PLAN</div>
-        <h2>Preparación para los Alpes</h2>
-        <p><strong>26 de abril–5 de septiembre de 2027.</strong> Tras la marcha de abril, el plan pasa por recuperación, reconstrucción aeróbica, desarrollo de resistencia en subida, preparación específica, taper y viaje.</p>
-        <ul>
-          <li><strong>17 mayo–13 junio:</strong> recuperar volumen y resistencia, con tempo y sweet spot selectivos.</li>
-          <li><strong>14 junio–11 julio:</strong> trabajo controlado de umbral y VO₂ máx., manteniendo los fondos en Z2.</li>
-          <li><strong>12 julio–8 agosto:</strong> puertos largos, desnivel y ascensiones después de varias horas de bici.</li>
-          <li><strong>9–25 agosto:</strong> reducir volumen y llegar descansado al viaje.</li>
-        </ul>
-        <h3>Durante el viaje</h3>
-        <p>Alpe d’Huez, Galibier y Ventoux se abordarán a ritmo sostenible, sin convertir cada puerto en una competición. Como referencia para las ascensiones largas, prioriza el 70–82 % del FTP, ajustando por altitud, pendiente, calor, viento y sensaciones. Evita encadenar los tres grandes puertos como esfuerzos máximos en días consecutivos.</p>
-        <p class="hint">El calendario del viaje es orientativo: la distribución definitiva se adaptará cuando estén cerrados los recorridos y los días de cada puerto.</p>
-      </article>
+      <div class="section-head"><h2>Calendario de esta semana</h2><span class="muted small" id="homeCalendarWeek"></span></div>
+      <div id="homeWeekCalendar" class="home-week-calendar"></div>
     </section>
 
     <section id="view-calendar" class="view">
@@ -60,7 +48,7 @@
     </section>
 
     <section id="view-zones" class="view">
-      <div class="eyebrow">POTENCIA</div><h1>FTP y zonas</h1>
+      <div class="eyebrow">REFERENCIAS DE ENTRENAMIENTO</div><h1>Zonas</h1>
       <p class="muted">Mantén separados los valores de tus dos bicicletas. Las sesiones futuras recalculan sus vatios al cambiar el FTP.</p>
       <div class="ftp-grid">
         <article class="panel"><label for="ftpIndoor">FTP indoor (W)</label><input id="ftpIndoor" type="number" min="80" max="600" step="1"><small id="indoorUpdated" class="muted"></small><button class="btn btn-primary" id="saveIndoor">Guardar FTP indoor</button></article>
@@ -68,25 +56,21 @@
       </div>
       <div class="section-head"><h2>Zonas de potencia</h2><span class="muted small">Selecciona bicicleta</span></div>
       <div class="switch-row"><button class="seg active" data-zone="indoor">Indoor</button><button class="seg" data-zone="road">Carretera</button></div>
-      <div id="zoneTable" class="panel"></div>
+      <div id="zoneTable" class="panel"></div><p class="hint">Los valores W/kg se calculan con tu peso de perfil y el FTP de cada bicicleta.</p>
       <div class="panel note"><strong>Cómo se calculan</strong><p>Z1 ≤55%; Z2 56–75%; tempo 76–90%; umbral 91–105%; VO₂ máx. 106–120%; Z6 121–150%. Sweet spot se calcula aparte: 88–94%. Los rangos son orientativos y se redondean al vatio.</p></div>
+      <article class="panel hrmax-panel"><h2>Frecuencia cardíaca máxima</h2><p class="muted small">Introduce tu FC máxima medida o conocida. Las zonas se calculan como porcentaje de ese valor.</p><label for="hrMaxInput">FC máxima (bpm)</label><input id="hrMaxInput" type="number" min="100" max="230" placeholder="Ej. 190"><button class="btn btn-primary" id="saveHrMax">Guardar FC máxima</button></article>
+      <div class="section-head"><h2>Zonas de frecuencia cardíaca</h2><span class="muted small">% de FC máxima</span></div><div id="hrZoneTable" class="panel"></div>
       <div class="section-head"><h2>Historial de tests</h2><button class="text-btn" id="addTest">＋ Añadir test</button></div>
       <div id="testHistory" class="mini-list"></div>
     </section>
 
     <section id="view-progress" class="view">
       <div class="eyebrow">SEGUIMIENTO</div><h1>Progreso</h1>
-      <div class="stat-grid">
-        <div class="stat-card"><small>Sesiones completadas</small><strong id="statDone">0</strong></div>
-        <div class="stat-card"><small>Horas registradas</small><strong id="statHours">0 h</strong></div>
-        <div class="stat-card"><small>Distancia</small><strong id="statKm">0 km</strong></div>
-        <div class="stat-card"><small>Desnivel</small><strong id="statClimb">0 m</strong></div>
-      </div>
-      <article class="panel"><div class="section-head"><h2>Horas por semana</h2></div><canvas id="hoursChart" height="210"></canvas></article>
-      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><h3>Indoor</h3><canvas id="ftpIndoorChart" height="190"></canvas><h3>Carretera</h3><canvas id="ftpRoadChart" height="190"></canvas><p class="hint">Las dos referencias se representan de forma independiente.</p></article>
-      <article class="panel"><div class="section-head"><h2>Carga semanal estimada</h2></div><p class="muted small">Minutos de entrenamiento × RPE. Es una referencia orientativa, no una medida clínica.</p><div id="loadSummary"></div></article>
-      <article class="panel"><div class="section-head"><h2>Distribución por estado</h2></div><div id="completionBreakdown"></div></article>
       <article class="panel"><div class="section-head"><h2>Historial de entrenamientos</h2><span class="muted small" id="historyCount"></span></div><div id="trainingHistory" class="mini-list"></div></article>
+      <article class="panel"><div class="section-head"><h2>Carga semanal estimada</h2></div><p class="muted small">Minutos de entrenamiento × RPE. Es una referencia orientativa, no una medida clínica.</p><div id="loadSummary"></div><canvas id="hoursChart" height="190"></canvas></article>
+      <article class="panel"><div class="section-head"><h2>Evolución FTP</h2></div><h3>Indoor</h3><canvas id="ftpIndoorChart" height="170"></canvas><h3>Carretera</h3><canvas id="ftpRoadChart" height="170"></canvas></article>
+      <article class="panel"><div class="section-head"><h2>Perfil de potencia</h2><button class="text-btn" id="editPowerProfile">Editar</button></div><p class="muted small">Mejores potencias representativas por duración. Introduce tus mejores valores conocidos.</p><div id="powerProfileDisplay"></div></article>
+      <article class="panel"><div class="section-head"><h2>Progreso acumulado</h2></div><div class="stat-grid"><div class="stat-card"><small>Sesiones realizadas</small><strong id="statDone">0</strong></div><div class="stat-card"><small>Distancia</small><strong id="statKm">0 km</strong></div><div class="stat-card"><small>Horas</small><strong id="statHours">0 h</strong></div><div class="stat-card"><small>Desnivel</small><strong id="statClimb">0 m</strong></div></div><div class="section-head"><h2>Cumplimiento</h2></div><div id="completionBreakdown"></div></article>
     </section>
 
     <section id="view-settings" class="view">
@@ -110,7 +94,7 @@
   <nav class="bottom-nav">
     <button class="nav-item active" data-view="home"><span>⌂</span><small>Inicio</small></button>
     <button class="nav-item" data-view="calendar"><span>▦</span><small>Plan</small></button>
-    <button class="nav-item" data-view="zones"><span>◉</span><small>FTP</small></button>
+    <button class="nav-item" data-view="zones"><span>◉</span><small>Zonas</small></button>
     <button class="nav-item" data-view="progress"><span>⌁</span><small>Progreso</small></button>
     <button class="nav-item" data-view="settings"><span>•••</span><small>Más</small></button>
   </nav>

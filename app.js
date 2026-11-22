@@ -4,7 +4,8 @@ PLAN.push(...EXTENDED_PLAN);
 const $ = id => document.getElementById(id);
 const STORAGE_KEY = "cycling-plan-pwa-v1";
 const defaultState = {
-  profile:{name:"Ciclista",weight:76},
+  profile:{name:"Ciclista",weight:76,hrMax:null},
+  powerProfile:{p5: null,p60:null,p300:null,p1200:null},
   ftp:{indoor:275,road:null,indoorDate:null,roadDate:null},
   ftpHistory:[],
   logs:{},
@@ -20,7 +21,7 @@ function loadState(){
   try {
     const saved=JSON.parse(localStorage.getItem(STORAGE_KEY));
     if(!saved)return structuredClone(defaultState);
-    const migrated={...structuredClone(defaultState),...saved,profile:{...defaultState.profile,...saved.profile},ftp:{...defaultState.ftp,...saved.ftp}};
+    const migrated={...structuredClone(defaultState),...saved,profile:{...defaultState.profile,...saved.profile},powerProfile:{...defaultState.powerProfile,...saved.powerProfile},ftp:{...defaultState.ftp,...saved.ftp}};
     migrated.ftpHistory=Array.isArray(saved.ftpHistory)?saved.ftpHistory.filter(t=>!(t.note==="Estimación inicial indicada" && t.date==="2026-11-24" && Number(t.ftp)===275)):[];
     if(migrated.ftp.indoorDate==="2026-11-24" && migrated.ftpHistory.length===0)migrated.ftp.indoorDate=null;
     return migrated;
@@ -90,20 +91,26 @@ function renderHome(){
   const now=new Date(),idx=weekIndexFor(now),w=idx>=0?PLAN[idx]:PLAN[0],todayEvents=getDailyEvents(now),event=todayEvents.find(e=>e.kind==="ride"||e.kind==="event")||todayEvents[0];
   $("homeDate").textContent=fmt(now,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   $("todayLabel").textContent=idx<0?"PLAN PERSONAL":`SEMANA ${w.week} · ${w.block.toUpperCase()}`;
-  $("todayType").textContent=event?.kind==="event"?"COMPETICIÓN":(event?.kind==="ride"?event.kind==="ride"?sessionType(event.description):"HOY":"DÍA");
+  $("todayType").textContent=event?.kind==="event"?"COMPETICIÓN":(event?.kind==="ride"?sessionType(event.description):event?.kind==="gym"?"GIMNASIO":event?.kind==="rest"?"DESCANSO":"DÍA");
   $("todayTitle").textContent=event?.title||"Día sin sesión programada";
-  $("todayDescription").textContent=event?.description||"Puedes descansar o registrar una actividad adicional.";
+  $("todayDescription").textContent=event?.description||"No hay una sesión planificada para hoy.";
   $("todayDuration").textContent=event?.duration||"";
   $("homeIndoor").textContent=`${state.ftp.indoor} W`;
   $("homeRoad").textContent=state.ftp.road?`${state.ftp.road} W`:"Sin registrar";
-  const target=new Date(2027,3,24,12),days=Math.ceil((target-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/86400000);
-  $("countdown").textContent=days>=0?`${days} días`:"Objetivo superado";
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const targets=[{id:"marchCountdown",date:new Date(2027,3,24),label:"marcha"},{id:"alpsCountdown",date:new Date(2027,7,26),label:"viaje"}];
+  const daysTo=(d)=>Math.ceil((d-today)/86400000);
+  const firstDays=daysTo(targets[0].date);$("countdown").textContent=firstDays>=0?`${firstDays} días` : "Superado";
+  targets.forEach(t=>{const el=$(t.id);if(el){const n=daysTo(t.date);el.textContent=n>=0?`${n} días restantes`:`Hace ${Math.abs(n)} días`;}});
   const start=mondayOf(now),events=[];
   for(let d=0;d<7;d++){const date=addDays(start,d);getDailyEvents(date).forEach(e=>{if(e.kind==="ride"||e.kind==="event"){const log=state.logs[e.date];events.push({e,log});}});}
   const done=events.filter(x=>x.log?.status==="done"||x.log?.status==="partial").length;
-  $("weekProgress").textContent=`${done}/${events.length} sesiones de ciclismo registradas`;
+  $("weekProgress").textContent=`${done}/${events.length} sesiones de ciclismo completadas`;
   $("weekBar").style.width=(events.length?done/events.length*100:0)+"%";
-  $("weekSummary").innerHTML=events.map(({e,log})=>`<div class="mini-item"><div class="left"><strong>${fmt(parseDate(e.date),{weekday:"short",day:"numeric",month:"short"})} · ${esc(e.title)}</strong><small>${esc(e.description)}</small></div><span class="status ${log?.status||""}">${log?.status==="done"?"Hecho":log?.status==="partial"?"Parcial":"Pendiente"}</span></div>`).join("")||'<p class="muted small">No hay sesiones en esta semana.</p>';
+  $("weekSummary").innerHTML=`<div class="mini-item"><div class="left"><strong>${done} de ${events.length} sesiones realizadas</strong><small>${events.filter(x=>x.log?.status==="done").length} completas · ${events.filter(x=>x.log?.status==="partial").length} parciales · ${events.length-done} pendientes</small></div></div>`;
+  $("homeCalendarWeek").textContent=`${fmt(start,{day:"numeric",month:"short"})} – ${fmt(addDays(start,6),{day:"numeric",month:"short"})}`;
+  $("homeWeekCalendar").innerHTML=Array.from({length:7},(_,d)=>{const date=addDays(start,d),dayEvents=getDailyEvents(date);return `<div class="home-day"><div class="home-day-head"><strong>${fmt(date,{weekday:"short",day:"numeric"})}</strong><small>${dayEvents.length?dayEvents.length+ (dayEvents.length===1?" actividad":" actividades"):"Libre"}</small></div>${dayEvents.map(e=>{const log=state.logs[e.date],click=(e.kind==="ride"||e.kind==="event")?`data-home-session="${e.date}"`:"";return `<div class="home-event ${e.kind}"><span>${esc(e.title)}</span>${log?.status==="done"?'<b>✓</b>':log?.status==="partial"?'<b>◐</b>':''}${click?`<button ${click} aria-label="Abrir sesión">›</button>`:""}</div>`;}).join("")}</div>`;}).join("");
+  $("homeWeekCalendar").querySelectorAll("[data-home-session]").forEach(btn=>btn.addEventListener("click",()=>{const date=btn.dataset.homeSession;const ev=getDailyEvents(parseDate(date)).find(e=>e.kind==="ride"||e.kind==="event");if(ev)openSession(ev);}));
   $("todayDetails").onclick=()=>{if(event?.date)openSession(event);else setView("calendar");};
 }
 function renderCalendar(){
@@ -137,9 +144,8 @@ function openSession(e){
     <div class="form-row"><label>Estado<select name="status"><option value="done" ${log.status==="done"?"selected":""}>Completada</option><option value="partial" ${log.status==="partial"?"selected":""}>Parcial</option><option value="missed" ${log.status==="missed"?"selected":""}>No realizada</option></select></label><label>Duración real (min)<input name="minutes" type="number" min="0" value="${log.minutes??""}" placeholder="Ej. 65"></label></div>
     <div class="form-row"><label>Distancia (km)<input name="km" type="number" min="0" step=".1" value="${log.km??""}"></label><label>Desnivel (m)<input name="climb" type="number" min="0" value="${log.climb??""}"></label></div>
     <div class="form-row"><label>Potencia media (W)<input name="power" type="number" min="0" value="${log.power??""}"></label><label>Potencia normalizada (W)<input name="np" type="number" min="0" value="${log.np??""}"></label></div>
-    <div class="form-row"><label>FC media (bpm)<input name="hr" type="number" min="0" value="${log.hr??""}"></label><label>Cadencia media (rpm)<input name="cadence" type="number" min="0" value="${log.cadence??""}"></label></div>
-    <div class="form-row"><label>RPE (1–10)<input name="rpe" type="number" min="1" max="10" value="${log.rpe??""}"></label><label>Hidratos (g/h)<input name="carbs" type="number" min="0" value="${log.carbs??""}"></label></div>
-    <div class="form-row"><label>Sueño (1–5)<input name="sleep" type="number" min="1" max="5" value="${log.sleep??""}" placeholder="Opcional"></label><label>Fatiga (1–5)<input name="fatigue" type="number" min="1" max="5" value="${log.fatigue??""}" placeholder="Opcional"></label></div>
+    <div class="form-row"><label>FC media (bpm)<input name="hr" type="number" min="0" value="${log.hr??""}"></label><label>FC máxima (bpm)<input name="hrMax" type="number" min="0" value="${log.hrMax??""}"></label></div>
+    <div class="form-row"><label>Cadencia media (rpm)<input name="cadence" type="number" min="0" value="${log.cadence??""}"></label><label>RPE (1–10)<input name="rpe" type="number" min="1" max="10" value="${log.rpe??""}"></label></div>
     <label>Sensación de piernas (1–5)<input name="legs" type="number" min="1" max="5" value="${log.legs??""}" placeholder="1 muy pesadas · 5 muy frescas"></label>
     <label>Sensaciones / notas<textarea name="notes" placeholder="Fatiga, sensaciones, nutrición, incidencias…">${esc(log.notes||"")}</textarea></label>
     <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelLog">Cerrar</button><button class="btn btn-primary" type="submit">Guardar registro</button></div>
@@ -149,18 +155,22 @@ function openSession(e){
   const updateTarget=()=>{const range=pctRange(e.description),bike=bikeSelect.value,ftp=state.ftp[bike];$("targetPower").textContent=range&&ftp?`Objetivo orientativo (${bike==="road"?"carretera":"indoor"}): ${Math.round(ftp*range.lo)}–${Math.round(ftp*range.hi)} W`:range?"Registra un FTP para esta bicicleta para calcular los vatios.":"";};
   bikeSelect.addEventListener("change",updateTarget);updateTarget();
   $("cancelLog").onclick=()=>$("sessionDialog").close();
-  $("logForm").onsubmit=ev=>{ev.preventDefault();const fd=new FormData(ev.target),obj={};for(const [k,v] of fd.entries())obj[k]=v===""?"":(["minutes","km","climb","power","np","hr","cadence","rpe","carbs","sleep","fatigue","legs"].includes(k)?Number(v):v);obj.date=e.date;obj.planned=e.description;obj.bike=obj.bike||inferredBike;obj.ftpUsed=state.ftp[obj.bike]||null;state.logs[e.date]=obj;saveState();$("sessionDialog").close();renderHome();renderCalendar();renderProgress();toast("Entrenamiento guardado");};
+  $("logForm").onsubmit=ev=>{ev.preventDefault();const fd=new FormData(ev.target),obj={};for(const [k,v] of fd.entries())obj[k]=v===""?"":(["minutes","km","climb","power","np","hr","cadence","rpe","hrMax","legs"].includes(k)?Number(v):v);obj.date=e.date;obj.planned=e.description;obj.bike=obj.bike||inferredBike;obj.ftpUsed=state.ftp[obj.bike]||null;state.logs[e.date]=obj;saveState();$("sessionDialog").close();renderHome();renderCalendar();renderProgress();toast("Entrenamiento guardado");};
 }
 $("closeDialog").onclick=()=>$("sessionDialog").close();
 function renderZones(){
   $("ftpIndoor").value=state.ftp.indoor;$("ftpRoad").value=state.ftp.road||"";
-  $("indoorUpdated").textContent=state.ftp.indoorDate?`Última actualización: ${state.ftp.indoorDate}`:"";
+  $("indoorUpdated").textContent=state.ftp.indoorDate?`Última actualización: ${state.ftp.indoorDate}`:"Estimación inicial: confirma con un test cuando corresponda";
   $("roadUpdated").textContent=state.ftp.roadDate?`Última actualización: ${state.ftp.roadDate}`:"Aún sin test registrado";
+  $("hrMaxInput").value=state.profile.hrMax||"";
   document.querySelectorAll("[data-zone]").forEach(b=>b.classList.toggle("active",b.dataset.zone===state.selectedZone));
-  const ftp=state.ftp[state.selectedZone];
+  const ftp=state.ftp[state.selectedZone],weight=Number(state.profile.weight)||null,ratio=ftp&&weight?ftp/weight:null;
   const rows=[["Z1 · Recuperación",0,.55,"≤"],["Z2 · Resistencia",.56,.75,""],["Z3 · Tempo",.76,.90,""],["Sweet spot",.88,.94,""],["Z4 · Umbral",.91,1.05,""],["Z5 · VO₂ máx.",1.06,1.20,""],["Z6 · Anaeróbica",1.21,1.50,""]];
-  $("zoneTable").innerHTML=ftp?rows.map(([name,a,b,prefix])=>`<div class="zone-row"><span class="zone-name"><i class="dot"></i>${name}</span><span class="zone-value">${prefix?prefix+Math.round(ftp*b):`${Math.round(ftp*a)}–${Math.round(ftp*b)}`} W</span></div>`).join(""):`<p class="muted">Registra un FTP de carretera para consultar estas zonas.</p>`;
-  $("testHistory").innerHTML=state.ftpHistory.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`<div class="mini-item"><div class="left"><strong>${t.bike==="indoor"?"Indoor":"Carretera"} · ${t.ftp} W</strong><small>${t.date} · Media 20 min: ${t.mean20||"—"} W ${t.note? "· "+esc(t.note):""}</small></div><span class="status ${t.mean20?"done":"partial"}">${t.mean20?"Test":"Manual"}</span></div>`).join("")||'<p class="muted small">Todavía no hay tests registrados.</p>';
+  $("zoneTable").innerHTML=ftp?rows.map(([name,a,b,prefix])=>{const watts=prefix?`≤${Math.round(ftp*b)} W`:`${Math.round(ftp*a)}–${Math.round(ftp*b)} W`;const wk=ratio?(prefix?`≤${(ratio*b).toFixed(2)}`:`${(ratio*a).toFixed(2)}–${(ratio*b).toFixed(2)}`):"—";return `<div class="zone-row"><span class="zone-name"><i class="dot"></i>${name}</span><span class="zone-value">${watts}<small class="zone-wkg"> · ${wk} W/kg</small></span></div>`;}).join(""):`<p class="muted">Registra un FTP de carretera para consultar estas zonas.</p>`;
+  const hr=Number(state.profile.hrMax);
+  const hrRows=[["Z1 · Muy suave",.50,.60],["Z2 · Suave",.60,.70],["Z3 · Aeróbica",.70,.80],["Z4 · Umbral",.80,.90],["Z5 · Máxima",.90,1.00]];
+  $("hrZoneTable").innerHTML=hr?hrRows.map(([name,a,b])=>`<div class="zone-row"><span>${name}</span><strong>${Math.round(hr*a)}–${Math.round(hr*b)} bpm</strong></div>`).join(""):'<p class="muted">Introduce tu FC máxima para calcular las zonas.</p>';
+  $("testHistory").innerHTML=state.ftpHistory.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t=>`<div class="mini-item"><div class="left"><strong>${t.bike==="indoor"?"Indoor":"Carretera"} · ${t.ftp} W</strong><small>${t.date} · Media 20 min: ${t.mean20||"—"} W · Peso ${t.weight||"—"} kg · FC ${t.hrAvg||"—"}/${t.hrMax||"—"} bpm · ${(t.wkg??(t.weight? t.ftp/t.weight:null))?.toFixed(2)||"—"} W/kg ${t.note?"· "+esc(t.note):""}</small></div><span class="status ${t.mean20?"done":"partial"}">${t.mean20?"Test":"Manual"}</span></div>`).join("")||'<p class="muted small">Todavía no hay tests registrados.</p>';
 }
 document.querySelectorAll("[data-zone]").forEach(b=>b.addEventListener("click",()=>{state.selectedZone=b.dataset.zone;saveState();renderZones();}));
 function saveFTP(bike){
@@ -171,13 +181,15 @@ function saveFTP(bike){
   saveState();renderZones();renderHome();renderCalendar();toast("FTP actualizado; las sesiones futuras recalculan sus vatios");
 }
 $("saveIndoor").onclick=()=>saveFTP("indoor");$("saveRoad").onclick=()=>saveFTP("road");
+$("saveHrMax").onclick=()=>{const v=Number($("hrMaxInput").value);if(!v||v<100||v>230){toast("Introduce una FC máxima válida (100–230 bpm)");return;}state.profile.hrMax=v;saveState();renderZones();toast("FC máxima guardada; zonas actualizadas");};
 $("addTest").onclick=()=>{
   $("dialogEyebrow").textContent="HISTORIAL FTP";$("dialogTitle").textContent="Registrar test FTP";
-  $("dialogBody").innerHTML=`<form id="testForm" class="dialog-form"><label>Fecha<input name="date" type="date" value="${todayISO()}" required></label><label>Bicicleta<select name="bike"><option value="indoor">Indoor</option><option value="road">Carretera</option></select></label><label>Potencia media de 20 min (W)<input name="mean20" type="number" min="80" required></label><label>FTP estimado (95% de la media)<input name="ftp" type="number" readonly></label><label>Notas<textarea name="note"></textarea></label><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelTest">Cancelar</button><button class="btn btn-primary">Guardar test</button></div></form>`;
-  $("sessionDialog").showModal();const f=$("testForm"),mean=f.elements.mean20,ftp=f.elements.ftp;
-  mean.addEventListener("input",()=>ftp.value=mean.value?Math.round(Number(mean.value)*.95):"");
+  $("dialogBody").innerHTML=`<form id="testForm" class="dialog-form"><label>Fecha<input name="date" type="date" value="${todayISO()}" required></label><label>Bicicleta<select name="bike"><option value="indoor">Indoor</option><option value="road">Carretera</option></select></label><label>Potencia media de 20 min (W)<input name="mean20" type="number" min="80" required></label><label>FTP estimado (95% de la media)<input name="ftp" type="number" readonly></label><div class="form-row"><label>Peso corporal (kg)<input name="weight" type="number" min="30" max="200" step="0.1" value="${state.profile.weight||""}" required></label><label>W/kg (FTP / peso)<input name="wkg" type="number" readonly></label></div><div class="form-row"><label>FC media (bpm)<input name="hrAvg" type="number" min="0"></label><label>FC máxima (bpm)<input name="hrMax" type="number" min="0"></label></div><label>Notas<textarea name="note"></textarea></label><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelTest">Cancelar</button><button class="btn btn-primary">Guardar test</button></div></form>`;
+  $("sessionDialog").showModal();const f=$("testForm"),mean=f.elements.mean20,ftp=f.elements.ftp,weight=f.elements.weight,wkg=f.elements.wkg;
+  const calc=()=>{ftp.value=mean.value?Math.round(Number(mean.value)*.95):"";wkg.value=ftp.value&&weight.value?(Number(ftp.value)/Number(weight.value)).toFixed(2):"";};
+  mean.addEventListener("input",calc);weight.addEventListener("input",calc);calc();
   $("cancelTest").onclick=()=>$("sessionDialog").close();
-  f.onsubmit=ev=>{ev.preventDefault();const obj={date:f.elements.date.value,bike:f.elements.bike.value,mean20:Number(mean.value),ftp:Math.round(Number(mean.value)*.95),note:f.elements.note.value};state.ftpHistory.push(obj);state.ftp[obj.bike]=obj.ftp;state.ftp[obj.bike+"Date"]=obj.date;saveState();$("sessionDialog").close();renderZones();renderHome();renderCalendar();toast("Test FTP guardado");};
+  f.onsubmit=ev=>{ev.preventDefault();const obj={date:f.elements.date.value,bike:f.elements.bike.value,mean20:Number(mean.value),ftp:Math.round(Number(mean.value)*.95),weight:Number(weight.value),hrAvg:Number(f.elements.hrAvg.value)||null,hrMax:Number(f.elements.hrMax.value)||null,wkg:Number(wkg.value)||null,note:f.elements.note.value};state.ftpHistory.push(obj);state.ftp[obj.bike]=obj.ftp;state.ftp[obj.bike+"Date"]=obj.date;state.profile.weight=obj.weight;if(obj.hrMax)state.profile.hrMax=obj.hrMax;saveState();$("sessionDialog").close();renderZones();renderHome();renderCalendar();toast("Test FTP guardado");};
 };
 function drawChart(canvas,labels,values,label){
   const ctx=canvas.getContext("2d"),w=canvas.clientWidth||320,h=190,dpr=window.devicePixelRatio||1;
@@ -194,26 +206,32 @@ function renderProgress(){
   const logs=Object.values(state.logs),valid=logs.filter(l=>l.status==="done"||l.status==="partial");
   const sum=k=>valid.reduce((a,l)=>a+(Number(l[k])||0),0);
   $("statDone").textContent=valid.length;$("statHours").textContent=(sum("minutes")/60).toFixed(1)+" h";$("statKm").textContent=sum("km").toFixed(1)+" km";$("statClimb").textContent=Math.round(sum("climb"))+" m";
-  const weeks=PLAN.slice(0,Math.max(1,weekIndexFor(new Date())+1)).slice(-8);
-  const vals=weeks.map(w=>Object.values(state.logs).filter(l=>l.date>=w.start&&l.date<=iso(addDays(parseDate(w.start),6))).reduce((a,l)=>a+(Number(l.minutes)||0)/60,0));
-  drawChart($("hoursChart"),weeks.map(w=>`S${w.week}`),vals,"Horas registradas");
-  const hist=state.ftpHistory.slice().sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
-  const indoor=hist.filter(x=>x.bike==="indoor"),road=hist.filter(x=>x.bike==="road");
-  drawChart($("ftpIndoorChart"),indoor.map(x=>x.date.slice(5)),indoor.map(x=>x.ftp),"FTP indoor (W)");
-  drawChart($("ftpRoadChart"),road.map(x=>x.date.slice(5)),road.map(x=>x.ftp),"FTP carretera (W)");
-  const weekStart=mondayOf(new Date()),weekEnd=iso(addDays(weekStart,6));
-  const weekLogs=valid.filter(l=>l.date>=iso(weekStart)&&l.date<=weekEnd);
-  const load=weekLogs.reduce((a,l)=>a+(Number(l.minutes)||0)*(Number(l.rpe)||0),0);
-  $("loadSummary").innerHTML=`<div class="zone-row"><span>Carga registrada esta semana</span><strong>${Math.round(load)} UA</strong></div><p class="hint">${weekLogs.filter(l=>Number(l.rpe)>0).length} sesiones con RPE registrado. Completa el RPE para mejorar esta estimación.</p>`;
   const history=Object.values(state.logs).filter(l=>l.date).sort((a,b)=>b.date.localeCompare(a.date));
   $("historyCount").textContent=history.length+" registros";
-  $("trainingHistory").innerHTML=history.length?history.map(l=>`<div class="mini-item"><div class="left"><strong>${fmt(parseDate(l.date),{day:"numeric",month:"short",year:"numeric"})} · ${l.bike==="road"?"Carretera":"Indoor"}</strong><small>${esc(l.planned||"Actividad")} · ${l.minutes||"—"} min · ${l.km||"—"} km · ${l.climb||0} m+ · RPE ${l.rpe||"—"}</small></div><div class="history-actions"><button class="text-btn" data-edit="${l.date}">Editar</button><button class="text-btn danger" data-delete="${l.date}">Borrar</button></div></div>`).join(""):'<p class="muted small">Todavía no hay entrenamientos registrados.</p>';
-  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const date=b.dataset.edit,day=(parseDate(date).getDay()+6)%7,idx=weekIndexFor(parseDate(date));const w=PLAN[idx]||PLAN[0];const ev=getDailyEvents(parseDate(date)).find(x=>x.kind==="ride"||x.kind==="event")||{date,title:"Actividad registrada",description:state.logs[date].planned||"Actividad",kind:"ride"};openSession({...ev,date});});
+  $("trainingHistory").innerHTML=history.length?history.map(l=>`<div class="mini-item"><div class="left"><strong>${fmt(parseDate(l.date),{day:"numeric",month:"short",year:"numeric"})} · ${l.bike==="road"?"Carretera":"Indoor"}</strong><small>${esc(l.planned||"Actividad")} · ${l.minutes||"—"} min · ${l.km||"—"} km · ${l.climb||0} m+ · FC ${l.hr||"—"}/${l.hrMax||"—"} · RPE ${l.rpe||"—"}</small></div><div class="history-actions"><button class="text-btn" data-edit="${l.date}">Editar</button><button class="text-btn danger" data-delete="${l.date}">Borrar</button></div></div>`).join(""):'<p class="muted small">Todavía no hay entrenamientos registrados.</p>';
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{const date=b.dataset.edit;const ev=getDailyEvents(parseDate(date)).find(x=>x.kind==="ride"||x.kind==="event")||{date,title:"Actividad registrada",description:state.logs[date].planned||"Actividad",kind:"ride"};openSession({...ev,date});});
   document.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>{const date=b.dataset.delete;if(confirm("¿Borrar el registro de este entrenamiento?")){delete state.logs[date];saveState();renderProgress();renderHome();renderCalendar();toast("Registro eliminado");}});
-  const planned=Object.keys(state.logs).length,done=valid.length,partial=logs.filter(l=>l.status==="partial").length,missed=logs.filter(l=>l.status==="missed").length;
-  $("completionBreakdown").innerHTML=`<div class="zone-row"><span>Completadas</span><strong>${done}</strong></div><div class="barline"><span style="width:${planned?done/planned*100:0}%"></span></div><div class="zone-row"><span>Parciales</span><strong>${partial}</strong></div><div class="zone-row"><span>No realizadas</span><strong>${missed}</strong></div><p class="hint">El cumplimiento se calcula sobre las sesiones que has registrado, no sobre todas las sesiones previstas.</p>`;
+  const monday=mondayOf(new Date()),weekEnd=iso(addDays(monday,6));
+  const weeks=PLAN.filter(w=>w.start<=iso(monday)).slice(-8);const vals=weeks.map(w=>Object.values(state.logs).filter(l=>l.date>=w.start&&l.date<=iso(addDays(parseDate(w.start),6))).reduce((a,l)=>a+(Number(l.minutes)||0)/60,0));
+  drawChart($("hoursChart"),weeks.map(w=>`S${w.week}`),vals,"Horas registradas por semana");
+  const weekLogs=valid.filter(l=>l.date>=iso(monday)&&l.date<=weekEnd),load=weekLogs.reduce((a,l)=>a+(Number(l.minutes)||0)*(Number(l.rpe)||0),0);
+  $("loadSummary").innerHTML=`<div class="zone-row"><span>Carga registrada esta semana</span><strong>${Math.round(load)} UA</strong></div><p class="hint">${weekLogs.filter(l=>Number(l.rpe)>0).length} sesiones con RPE registrado. Minutos × RPE; referencia orientativa.</p>`;
+  const hist=state.ftpHistory.slice().sort((a,b)=>a.date.localeCompare(b.date));const indoor=hist.filter(x=>x.bike==="indoor"),road=hist.filter(x=>x.bike==="road");
+  drawChart($("ftpIndoorChart"),indoor.map(x=>x.date.slice(5)),indoor.map(x=>x.ftp),"FTP indoor (W)");drawChart($("ftpRoadChart"),road.map(x=>x.date.slice(5)),road.map(x=>x.ftp),"FTP carretera (W)");
+  const pp=state.powerProfile||defaultState.powerProfile,weight=Number(state.profile.weight)||null;
+  const powerRows=[["5 segundos","p5"],["1 minuto","p60"],["5 minutos","p300"],["20 minutos","p1200"]];
+  $("powerProfileDisplay").innerHTML=powerRows.map(([label,key])=>{const v=Number(pp[key])||0;return `<div class="zone-row"><span>${label}</span><strong>${v?v+" W · "+(weight?(v/weight).toFixed(2)+" W/kg":"—"):"Sin registrar"}</strong></div>`;}).join("");
+  const done=valid.length,partial=logs.filter(l=>l.status==="partial").length,missed=logs.filter(l=>l.status==="missed").length,planned=logs.length;
+  $("completionBreakdown").innerHTML=`<div class="zone-row"><span>Completadas</span><strong>${logs.filter(l=>l.status==="done").length}</strong></div><div class="barline"><span style="width:${planned?done/planned*100:0}%"></span></div><div class="zone-row"><span>Parciales</span><strong>${partial}</strong></div><div class="zone-row"><span>No realizadas</span><strong>${missed}</strong></div>`;
 }
-$("saveProfile").onclick=()=>{state.profile.name=$("athleteName").value||"Ciclista";state.profile.weight=Number($("athleteWeight").value)||76;saveState();toast("Perfil guardado");};
+$("editPowerProfile").onclick=()=>{
+  const p=state.powerProfile||defaultState.powerProfile;
+  $("dialogEyebrow").textContent="RENDIMIENTO";$("dialogTitle").textContent="Editar perfil de potencia";
+  $("dialogBody").innerHTML=`<form id="powerProfileForm" class="dialog-form"><p class="muted small">Introduce tus mejores potencias máximas conocidas, preferiblemente medidas en esfuerzos recientes y comparables.</p><div class="form-row"><label>5 segundos (W)<input name="p5" type="number" min="0" value="${p.p5||""}"></label><label>1 minuto (W)<input name="p60" type="number" min="0" value="${p.p60||""}"></label></div><div class="form-row"><label>5 minutos (W)<input name="p300" type="number" min="0" value="${p.p300||""}"></label><label>20 minutos (W)<input name="p1200" type="number" min="0" value="${p.p1200||""}"></label></div><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="cancelPowerProfile">Cancelar</button><button class="btn btn-primary">Guardar perfil</button></div></form>`;
+  $("sessionDialog").showModal();$("cancelPowerProfile").onclick=()=>$("sessionDialog").close();
+  $("powerProfileForm").onsubmit=ev=>{ev.preventDefault();const fd=new FormData(ev.target);state.powerProfile={};for(const k of ["p5","p60","p300","p1200"])state.powerProfile[k]=Number(fd.get(k))||null;saveState();$("sessionDialog").close();renderProgress();toast("Perfil de potencia actualizado");};
+};
+$("saveProfile").onclick=()=>{state.profile.name=$("athleteName").value||"Ciclista";state.profile.weight=Number($("athleteWeight").value)||76;saveState();renderZones();renderProgress();toast("Perfil guardado");};
 function exportData(){
   const blob=new Blob([JSON.stringify({app:"Mi Plan Ciclista",version:1,exportedAt:new Date().toISOString(),state},null,2)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`mi-plan-ciclista-${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href);toast("Copia de seguridad exportada");
